@@ -1,0 +1,70 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <Extern href="stdidcmd.h"/>
+  <Extern href="vsshlids.h"/>
+  <Include href="KnownImageIds.vsct"/>
+  <Include href="VSGlobals.vsct"/>
+
+  <Commands package="InsertGuid">
+
+    <Menus>
+      <Menu guid="InsertGuid" id="TopLevelMenu" priority="0x700" type="Menu">
+        <Parent guid ="guidSHLMainMenu"
+                id ="IDG_VS_MM_TOOLSADDINS" />
+        <Strings>
+          <ButtonText>Code Alignment</ButtonText>
+         </Strings>
+      </Menu>
+    </Menus>
+    
+    
+    <Groups>
+      <Group guid="InsertGuid" id="MyMenuGroup" priority="0x0600">
+        <Parent guid="InsertGuid" id="TopLevelMenu"/>
+      </Group>
+    </Groups>
+
+    <!--This section defines the elements the user can interact with, like a menu command or a button
+        or combo box in a toolbar. -->
+    <Buttons>
+      <Button guid="InsertGuid" id="MyCommand" priority="0x0100" type="Button">
+        <Parent guid="InsertGuid" id="MyMenuGroup" />
+        <Icon guid="ImageCatalogGuid" id="ModifyField" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <Strings>
+          <ButtonText>변수 정렬</ButtonText>
+          <LocCanonicalName>.InsertGuid.MyCommand</LocCanonicalName>
+        </Strings>
+      </Button>
+    <Button guid="InsertGuid" id="MyCommand2" priority="0x0200" type="Button">
+        <Parent guid="InsertGuid" id="MyMenuGroup" />
+        <Icon guid="ImageCatalogGuid" id="ModifyField" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <Strings>
+          <ButtonText>기호 정렬</ButtonText>
+          <LocCanonicalName>.InsertGuid.MyCommand</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="InsertGuid" id="MyCommand3" priority="0x0300" type="Button">
+        <Parent guid="InsertGuid" id="MyMenuGroup" />
+        <Icon guid="ImageCatalogGuid" id="ModifyField" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <Strings>
+          <ButtonText>Enum 정렬</ButtonText>
+          <LocCanonicalName>.InsertGuid.MyCommand</LocCanonicalName>
+        </Strings>
+      </Button>
+    </Buttons>
+  </Commands>
+
+  <Symbols>
+    <GuidSymbol name="InsertGuid" value="{4355cf1a-98c6-4d2d-99a2-79721672e8dc}">
+      <IDSymbol name="MyMenuGroup" value="0x0001" />
+      <IDSymbol name="TopLevelMenu" value="0x1021" />
+      <IDSymbol name="MyCommand" value="0x0100" />
+      <IDSymbol name="MyCommand2" value="0x0200" />
+      <IDSymbol name="MyCommand3" value="0x0300" />
+    </GuidSymbol>
+  </Symbols>
+</CommandTable>
