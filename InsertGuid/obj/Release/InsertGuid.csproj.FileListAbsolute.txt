@@ -12,7 +12,6 @@ D:\Study\InsertGuid\InsertGuid\obj\Release\VSCT.read.1.tlog
 D:\Study\InsertGuid\InsertGuid\obj\Release\VSCT.write.1.tlog
 D:\Study\InsertGuid\InsertGuid\obj\Release\resources.json
 D:\Study\InsertGuid\InsertGuid\obj\Release\ctoFiles.json
-D:\Study\InsertGuid\InsertGuid\obj\Release\_EmptyResource.resources.original
 D:\Study\InsertGuid\InsertGuid\obj\Release\mergeCto.cache
 D:\Study\InsertGuid\InsertGuid\obj\Release\InsertGuid.csproj.CoreCompileInputs.cache
 D:\Study\InsertGuid\InsertGuid\obj\Release\InsertGuid.dll

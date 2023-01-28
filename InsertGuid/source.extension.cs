@@ -11,7 +11,7 @@ namespace InsertGuid
         public const string Name = "Code Alignment";
         public const string Description = @"Made By HJO";
         public const string Language = "en-US";
-        public const string Version = "1.0";
+        public const string Version = "1.1";
         public const string Author = "재오 하";
         public const string Tags = "";
     }

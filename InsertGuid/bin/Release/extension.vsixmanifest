@@ -1,6 +1,6 @@
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011">
   <Metadata>
-    <Identity Id="InsertGuid.9d4397ae-2068-463f-84ac-0ca77c9ecf83" Version="1.0" Language="en-US" Publisher="재오 하" />
+    <Identity Id="InsertGuid.9d4397ae-2068-463f-84ac-0ca77c9ecf83" Version="1.1" Language="en-US" Publisher="재오 하" />
     <DisplayName>Code Alignment</DisplayName>
     <Description xml:space="preserve">Made By HJO</Description>
     <Icon>Resources\Icon.png</Icon>
