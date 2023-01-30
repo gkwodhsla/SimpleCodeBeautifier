@@ -90,7 +90,7 @@ namespace InsertGuid.Commands
                 String addedStr = "";
                 int pos = str.IndexOf( "//" );
                 int bias = 0;
-                if ( str[0] != '\t' ) bias = -1;
+                if ( str[ 0 ] != '\t' ) bias = -1;
 
                 for ( int i = 0; i < maxLen - pos + bias; ++i )
                 {

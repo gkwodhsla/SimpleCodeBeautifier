@@ -4,349 +4,315 @@ using EnvDTE;
 using Microsoft.VisualStudio.Shell;
 using System.Collections.Generic;
 using Task = System.Threading.Tasks.Task;
+using System.Text.RegularExpressions;
 
 namespace InsertGuid
 {
-    [Command(PackageIds.MyCommand)]
-    internal sealed class MyCommand : BaseCommand<MyCommand>
+    [ Command( PackageIds.MyCommand ) ]
+    internal sealed class MyCommand : BaseCommand< MyCommand >
     {
-        bool MakeStringHasOneSpace(ref List<String> Strs)
+        // 코드를 줄 단위로 추출한다.
+        void ExtractCodeByEachLine( ref String BaseCode, ref List< String > Codes )
         {
-            List<String> oneSpaceStrs = new List<String>();
-            int maxSpace = 0;
-
-            foreach(String str in Strs)
+            int startIdx = 0;
+            for ( int i = 0; i < BaseCode.Length; ++i )
             {
-                int semiColonPos    = -1;
-                int firstSpacePos   = -1;
-                int lastTemplatePos = -1;
-                for(int i=0; i<str.Length; ++i)
+                if ( BaseCode[i] == '\n' )
                 {
-                    if (str[i] == ';')
-                    {
-                        semiColonPos = i;
-                    }
-
-                    if(firstSpacePos==-1 && str[i] == ' ')
-                    {
-                        firstSpacePos = i;
-                    }
-
-                    if( str[i] == '>' )
-                    {
-                        lastTemplatePos = i;
-                    }
+                    Codes.Add( BaseCode.Substring( startIdx, i - startIdx ) );
+                    startIdx = i + 1;
                 }
+            }
 
-                if (semiColonPos == -1)
+            Codes.Add( BaseCode.Substring( startIdx, BaseCode.Length - startIdx ) );
+        }
+
+        // 코드에서 입력받은 문자의 위치를 반환한다.
+        int GetInputCharPosInCode( String Code, char ToFindChar, bool FindLastPos )
+        {
+            int charColonPos = -1;
+            for ( int i = 0; i < Code.Length; ++i )
+            {
+                if ( Code[ i ] == ToFindChar )
                 {
-                    VS.MessageBox.Show("beautify", "변수에 세미콜론이 없습니다.");
+                    charColonPos = i;
+
+                    if( !FindLastPos ) break;
+                }
+            }
+
+            return charColonPos;
+        }
+
+        // 문자열에 알파벳이 있는지 검사한다.
+        bool HasAlphabet( String Str )
+        {
+            return Regex.IsMatch( Str, @"[a-zA-Z]" );
+        }
+
+        // 각 줄의 코드가 타입과 이름 사이에 하나의 공백만 가지도록 수정한다.
+        bool MakeEachCodeLineHasOneSpaceBetTypeAndName( ref List< String > Codes )
+        {
+            List< String > oneSpaceStrs = new List< String >();
+            
+            foreach( String code in Codes )
+            {
+                int semiColonPos    = GetInputCharPosInCode( code, ';', false );
+                int firstSpacePos   = GetInputCharPosInCode( code, ' ', false );
+                int lastTemplatePos = GetInputCharPosInCode( code, '>', true  );
+
+                if( !HasAlphabet( code ) )
+                {
+                    VS.MessageBox.Show( "beautify", "빈 문자열이 있습니다. 빈 문자열을 없애주세요." );
+
                     return false;
                 }
-                else if (semiColonPos > 0 && str[semiColonPos - 1] == ' ')
+                else if ( semiColonPos == -1 )
                 {
-                    VS.MessageBox.Show("beautify", "세미콜론 앞에 공백이 있으면 안됩니다.");
+                    VS.MessageBox.Show( "beautify", "변수에 세미콜론이 없습니다." );
+                    
                     return false;
                 }
-                else if(lastTemplatePos == -1 && firstSpacePos == -1)
+                else if ( semiColonPos > 0 && code[ semiColonPos - 1 ] == ' ')
                 {
-                    VS.MessageBox.Show("beautify", "변수 형식이 잘못되었습니다 [자료형] [이름]; 형식을 지켜주세요");
+                    VS.MessageBox.Show( "beautify", "세미콜론 앞에 공백이 있으면 안됩니다." );
+                    
+                    return false;
+                }
+                else if( lastTemplatePos == -1 && firstSpacePos == -1 )
+                {
+                    VS.MessageBox.Show( "beautify", "변수 형식이 잘못되었습니다 [자료형] [이름]; 형식을 지켜주세요" );
                 }
                 else
                 {
                     // 템플릿인 경우 처리
-                    if(lastTemplatePos != -1)
+                    if( lastTemplatePos != -1 )
                     {
                         int spaceCount = 0;
-                        while(true)
+                        while( true )
                         {
-                            if (str[lastTemplatePos + spaceCount + 1] != ' ') break;
+                            if ( code[ lastTemplatePos + spaceCount + 1 ] != ' ' ) break;
                             else ++spaceCount;
                         }
 
-                        if (spaceCount == 0)
+                        if ( spaceCount == 0 )
                         {
-                            oneSpaceStrs.Add(str.Insert(lastTemplatePos + 1, " ".ToString()));
+                            oneSpaceStrs.Add( code.Insert( lastTemplatePos + 1, " ".ToString() ) );
                         }
                         else
                         {
-                            oneSpaceStrs.Add(str.Remove(lastTemplatePos + 1, spaceCount - 1));
+                            oneSpaceStrs.Add( code.Remove( lastTemplatePos + 1, spaceCount - 1 ) );
                         }
                     }
                     // 일반 변수인 경우 처리
                     else
                     {
                         int spaceCount = 0;
-                        while (true)
+                        while ( true )
                         {
-                            if (str[firstSpacePos + spaceCount] != ' ') break;
+                            if ( code[ firstSpacePos + spaceCount ] != ' ' ) break;
                             else ++spaceCount;
                         }
 
-                        oneSpaceStrs.Add(str.Remove(firstSpacePos, spaceCount - 1));
+                        oneSpaceStrs.Add( code.Remove( firstSpacePos, spaceCount - 1 ) );
                     }
                 }
             }
 
-            Strs = oneSpaceStrs;
+            Codes = oneSpaceStrs;
 
             return true;
         }
 
-        int GetLongestValNum(ref List<String> Strs)
+        // 가장 긴 타입의 길이를 반환한다.
+        int GetLongestTypeNum( ref List< String > Codes )
         {
-            bool bSuccess = MakeStringHasOneSpace(ref Strs);
-            if (!bSuccess) return -1;
-
-            int longestCount = 0;
-            foreach (String str in Strs)
+            int longestNum = 0;
+            foreach ( String code in Codes )
             {
-                int firstSpacePos = -1;
-                int lastTemplatePos = -1;
-                for (int i = 0; i < str.Length; ++i)
-                {
-                    if (firstSpacePos == -1 && str[i] == ' ')
-                    {
-                        firstSpacePos = i;
-                    }
-
-                    if (str[i] == '>')
-                    {
-                        lastTemplatePos = i;
-                    }
-                }
+                int firstSpacePos   = GetInputCharPosInCode( code, ' ', false );
+                int lastTemplatePos = GetInputCharPosInCode( code, '>', false );
 
                 // 템플릿인 경우 처리
-                if (lastTemplatePos != -1)
+                if ( lastTemplatePos != -1 )
                 {
                     int bias = 0;
-                    if (str[0] == '\t') bias = -1;
-                    
-                    longestCount = Math.Max(longestCount, lastTemplatePos + 1 + bias);
+                    if ( code[ 0 ] == '\t' ) bias = -1;
+
+                    longestNum = Math.Max( longestNum, lastTemplatePos + 1 + bias );
                 }
                 // 일반 변수인 경우 처리
                 else
                 {
                     int bias = 0;
-                    if (str[0] == '\t') bias = -1;
+                    if ( code[ 0 ] == '\t' ) bias = -1;
 
-                    longestCount = Math.Max(longestCount, firstSpacePos + bias);
+                    longestNum = Math.Max( longestNum, firstSpacePos + bias );
                 }
             }
 
-            return longestCount;
+            return longestNum;
         }
 
-        bool AligningStrs(ref List<String> Strs)
+        // 타입을 정렬한다.
+        bool AligningType( ref List< String > Codes )
         {
-            int longestNum = GetLongestValNum(ref Strs);
-            if (longestNum == -1) return false;
+            if ( !MakeEachCodeLineHasOneSpaceBetTypeAndName( ref Codes ) ) return false;
 
-            List<String> retStrs = new List<String>();
-            foreach (String str in Strs)
+            int longestTypeNum = GetLongestTypeNum( ref Codes );
+            if ( longestTypeNum == -1 ) return false;
+
+            List< String > retStrs = new List< String >();
+            foreach ( String code in Codes )
             {
-                int firstSpacePos = -1;
-                int lastTemplatePos = -1;
-                for (int i = 0; i < str.Length; ++i)
-                {
-                    if (firstSpacePos == -1 && str[i] == ' ')
-                    {
-                        firstSpacePos = i;
-                    }
-
-                    if (str[i] == '>')
-                    {
-                        lastTemplatePos = i;
-                    }
-                }
-
+                int firstSpacePos   = GetInputCharPosInCode( code, ' ', false );
+                int lastTemplatePos = GetInputCharPosInCode( code, '>', false );
+                
                 // 템플릿인 경우 처리
-                if (lastTemplatePos != -1)
+                if ( lastTemplatePos != -1 )
                 {
                     int bias = 0;
-                    if (str[0] != '\t') bias = -1;
+                    if ( code[ 0 ] != '\t' ) bias = -1;
                     
                     String addedStr = "";
-                    for (int i=0;i< longestNum - lastTemplatePos + bias;++i)
+                    for ( int i = 0; i < longestTypeNum - lastTemplatePos + bias; ++i )
                     {
                         addedStr += ' ';
                     }
 
-                    retStrs.Add(str.Insert(lastTemplatePos + 1, addedStr));
+                    retStrs.Add( code.Insert( lastTemplatePos + 1, addedStr ) );
                 }
                 // 일반 변수인 경우 처리
                 else
                 {
                     int bias = 0;
-                    if (str[0] != '\t') bias = -1;
+                    if ( code[ 0 ] != '\t' ) bias = -1;
 
                     String addedStr = "";
-                    for (int i = 0; i < longestNum - firstSpacePos + 1 + bias; ++i)
+                    for ( int i = 0; i < longestTypeNum - firstSpacePos + 1 + bias; ++i )
                     {
                         addedStr += ' ';
                     }
 
-                    retStrs.Add(str.Insert(firstSpacePos + 1, addedStr));
+                    retStrs.Add( code.Insert( firstSpacePos + 1, addedStr ) );
                 }
             }
 
-            Strs = retStrs;
+            Codes = retStrs;
 
             return true;
         }
 
-        void AddEmptyRemark(ref List<String> Strs)
+        // 주석이 없다면 빈 주석을 하나 추가한다.
+        void AddEmptyCommentIfNoComment( ref List< String > Codes )
         {
-            List<String> addedStrs = new List<String>();
-            foreach (String str in Strs)
+            List< String > addedStrs = new List< String >();
+            foreach ( String code in Codes )
             {
-                if (str.Contains("//"))
+                if ( code.Contains( "//" ) )
                 {
-                    addedStrs.Add(str);
+                    addedStrs.Add( code );
 
                     continue;
                 }
 
-                int semiColonPos = -1;
-                for (int i = 0; i < str.Length; ++i)
-                {
-                    if (str[i] == ';')
-                    {
-                        semiColonPos = i;
-                    }
-                }
+                int semiColonPos = GetInputCharPosInCode( code, ';', false );
 
-                addedStrs.Add(str.Insert(semiColonPos + 1, " //".ToString()));
+                addedStrs.Add( code.Insert( semiColonPos + 1, " //".ToString() ) );
             }
 
-            Strs = addedStrs;
+            Codes = addedStrs;
         }
 
-        void MakeStringHasOneSpaceBefRemark(ref List<String> Strs)
+        // 주석 앞에 하나의 스페이스만 있도록 코드를 수정한다.
+        void MakeCodeHasOneSpaceBefComment( ref List< String > Codes )
         {
-            // 주석이 없다면 반드시 하나 달아준다. ( 변수에 주석 안다는 일이 없도록! )
-            AddEmptyRemark(ref Strs);
+            AddEmptyCommentIfNoComment( ref Codes );
 
-            List<String> retStr = new List<String>();
-            foreach (String str in Strs)
+            List< String > retStr = new List< String >();
+            foreach ( String code in Codes )
             {
-                int semiColonPos = -1;
-                for (int i = 0; i < str.Length; ++i)
-                {
-                    if (str[i] == ';')
-                    {
-                        semiColonPos = i;
-
-                        break;
-                    }
-                }
-
-                int spaceCount = str.IndexOf("//") - semiColonPos - 1;
-                retStr.Add(str.Remove(semiColonPos + 1, spaceCount - 1));
+                int semiColonPos = GetInputCharPosInCode( code, ';', false );
+                int spaceCount   = code.IndexOf( "//" ) - semiColonPos - 1;
+                
+                retStr.Add( code.Remove( semiColonPos + 1, spaceCount - 1 ) );
             }
 
-            Strs = retStr;
+            Codes = retStr;
         }
 
-        int GetLongestRemarkNum(ref List<String> Strs)
+        // 가장 긴 주석의 길이를 반환한다.
+        int GetLongestCommentNum( ref List< String > Codes )
         {
             int longestRemarkNum = 0;
-            foreach (String str in Strs)
+            foreach ( String code in Codes )
             {
-                int semiColonPos = -1;
-                for (int i = 0; i < str.Length; ++i)
-                {
-                    if (str[i] == ';')
-                    {
-                        semiColonPos = i;
-                        
-                        break;
-                    }
-                }
+                int semiColonPos = GetInputCharPosInCode( code, ';', false );
 
                 int bias = 0;
-                if (str[0] != '\t') bias = 1;
+                if ( code[ 0 ] != '\t' ) bias = 1;
 
-                int pos = str.IndexOf("//");
-                longestRemarkNum = Math.Max(longestRemarkNum, pos + bias);
+                int pos = code.IndexOf( "//" );
+                longestRemarkNum = Math.Max( longestRemarkNum, pos + bias );
             }
 
             return longestRemarkNum;
         }
 
-        void AligningRemark(ref List<String> Strs)
+        // 주석을 정렬한다.
+        void AligningComment( ref List< String > Codes )
         {
-            MakeStringHasOneSpaceBefRemark(ref Strs);
-            int longestRemarkNum = GetLongestRemarkNum(ref Strs);
+            MakeCodeHasOneSpaceBefComment( ref Codes );
+            int longestCommentNum = GetLongestCommentNum( ref Codes );
 
-            List<String> retStrs = new List<String>();
-            foreach (String str in Strs)
+            List< String > retStrs = new List< String >();
+            foreach ( String code in Codes )
             {
-                int semiColonPos = -1;
-                for (int i = 0; i < str.Length; ++i)
-                {
-                    if (str[i] == ';')
-                    {
-                        semiColonPos = i;
-
-                        break;
-                    }
-                }
+                int semiColonPos = GetInputCharPosInCode( code, ';', false );
 
                 String addedStr = "";
-                int pos = str.IndexOf("//");
+                int commentBegpos = code.IndexOf("//");
                 int bias = 0;
-                if (str[0] != '\t') bias = -1;
+                if ( code[ 0 ] != '\t' ) bias = -1;
 
-                for (int i=0;i<longestRemarkNum - pos + bias;++i)
+                for ( int i = 0; i < longestCommentNum - commentBegpos + bias; ++i )
                 {
                     addedStr += ' ';
                 }
 
-                retStrs.Add(str.Insert(semiColonPos+1, addedStr));
+                retStrs.Add( code.Insert( semiColonPos+1, addedStr ) );
             }
 
-            Strs = retStrs;
+            Codes = retStrs;
         }
 
-        protected override async Task ExecuteAsync(OleMenuCmdEventArgs e)
+        protected override async Task ExecuteAsync( OleMenuCmdEventArgs e )
         {
             await Package.JoinableTaskFactory.SwitchToMainThreadAsync();
-            DTE dte = await Package.GetServiceAsync(typeof(DTE)) as DTE;
+            DTE dte = await Package.GetServiceAsync( typeof( DTE ) ) as DTE;
             TextSelection selection = dte.ActiveDocument.Selection as TextSelection;
             
-            string text = selection.Text;
-            text = text.Replace('\r'.ToString(), String.Empty);
-            List<String> strs = new List<String>();
+            string targetSourceCode = selection.Text;
+            targetSourceCode = targetSourceCode.Replace( '\r'.ToString(), String.Empty );
+            List< String > codes = new List< String >();
 
-            int startIdx = 0;
-            //코드를 \n 단위로 자른다.
-            for (int i=0;i<text.Length;++i)
-            {
-                if(text[i] == '\n')
-                {
-                    strs.Add(text.Substring(startIdx, i - startIdx ));
-                    startIdx = i + 1;
-                }
-            }
-            strs.Add(text.Substring(startIdx, text.Length - startIdx));
+            ExtractCodeByEachLine( ref targetSourceCode, ref codes );
+            
+            if ( !AligningType( ref codes ) ) return;
 
-            if (!AligningStrs(ref strs)) return;
-
-            AligningRemark(ref strs);
+            AligningComment( ref codes );
 
             string result = String.Empty;
 
-            foreach(String str in strs)
+            foreach( String str in codes )
             {
                 result += str+"\r\n";
             }
 
-            result = result.Remove(result.Length - 1);
-            result = result.Remove(result.Length - 1);
+            result = result.Remove( result.Length - 1 );
+            result = result.Remove( result.Length - 1 );
 
             selection.Insert(result);
-            //selection.Text = result;
         }
     }
 }
